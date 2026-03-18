@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zapier_test
+        ports:
+          - 5432:5432
+
+      rabbitmq:
+        image: rabbitmq:4
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+        ports:
+          - 5672:5672
+
+    env:
+      DB_URL: postgres://postgres:postgres@localhost:5432/zapier_test?sslmode=disable
+      JWT_SECRET: test-secret-key-for-ci
+      WEBHOOK_KEY: test-webhook-key
+      RABBITMQ_HOSTNAME: localhost
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_JOBS_EXCHANGE: jobs_exchange
+      RABBITMQ_JOBS_QUEUE: jobs_queue
+      RABBITMQ_JOBS_ROUTING_KEY: jobs_queue
+      RABBITMQ_JOBS_PREFETCH_COUNT: "1"
+      RABBITMQ_NOTIFICATIONS_EXCHANGE: notifications_exchange
+      RABBITMQ_NOTIFICATIONS_QUEUE: notifications_queue
+      RABBITMQ_NOTIFICATIONS_ROUTING_KEY: notifications_queue
+      RABBITMQ_NOTIFICATIONS_PREFETCH_COUNT: "1"
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Generate database migrations
+      run: npm run generate
+
+    - name: Run database migrations
+      run: npm run migrate
+
+    - name: Type check
+      run: npx tsc --noEmit
+
+    - name: Lint
+      run: npm run lint
+
+    - name: Run tests
+      run: npm test
+
+    - name: Build application
+      run: npm run build
