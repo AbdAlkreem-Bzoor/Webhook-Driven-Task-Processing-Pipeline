@@ -276,7 +276,11 @@ git clone <repository-url>
 cd zapier
 
 # 2. Start all services
-docker compose up --build
+docker compose up -d
+
+docker compose exec app npm run migrate
+
+docker compose exec app npm run seed
 
 # 3. Access the services:
 #    - API:        http://localhost:3000
