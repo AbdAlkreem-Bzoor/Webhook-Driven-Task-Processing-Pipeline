@@ -1,6 +1,4 @@
 ### Webhook Pipeline API Tests
-### Run with VS Code REST Client extension or similar tool
-###
 ### Usage:
 ### 1. Start services: docker compose up --build
 ### 2. Run the login request first to get tokens
