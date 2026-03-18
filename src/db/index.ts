@@ -2,7 +2,8 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import * as schema from "./schema.js";
-import { config } from "../config.js";
+import * as relations from "./relations.js";
+import { configuration } from "../configuration.js";
 
-const conn = postgres(config.db.url);
-export const db = drizzle(conn, { schema });
+const connection = postgres(configuration.db.url);
+export const db = drizzle(connection, { schema: { ...schema, ...relations } });
