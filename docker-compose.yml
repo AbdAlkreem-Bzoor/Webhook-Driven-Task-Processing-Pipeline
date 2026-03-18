@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+      - "9464:9464"
+    environment:
+      PORT: "3000"
+      PLATFORM: "dev"
+      DB_URL: "postgres://postgres:postgres@db:5432/zapier?sslmode=disable"
+      JWT_SECRET: "eYZoiHlBDzdCMHc5VsQtAhyqJxkJYE5FlSrxhStA/a+q1qBDkrP7GQ+BwUbH3z0xAONmkCOOG320ABZtdFuCfQ=="
+      WEBHOOK_KEY: "f271c81ff7084ee5b99a5091b42d486e"
+      RABBITMQ_HOSTNAME: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: "guest"
+      RABBITMQ_PASSWORD: "guest"
+      RABBITMQ_JOBS_EXCHANGE: "jobs_exchange"
+      RABBITMQ_JOBS_QUEUE: "jobs_queue"
+      RABBITMQ_JOBS_ROUTING_KEY: "jobs_queue"
+      RABBITMQ_JOBS_PREFETCH_COUNT: "1"
+      RABBITMQ_NOTIFICATIONS_EXCHANGE: "notifications_exchange"
+      RABBITMQ_NOTIFICATIONS_QUEUE: "notifications_queue"
+      RABBITMQ_NOTIFICATIONS_ROUTING_KEY: "notifications_queue"
+      RABBITMQ_NOTIFICATIONS_PREFETCH_COUNT: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zapier
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zapier"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  pgdata:
+  rabbitmqdata:
