@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { pipelines, jobs, outboxMessages } from "../../db/schema.js";
 import { AppMetrics } from "../../diagnostics/AppMetrics.js";
 import { isValidWebhookSignature } from "../../services/WebhookSignatureVerification.js";
@@ -108,19 +108,22 @@ export function createWebhookRouter(
                 });
 
         } catch (error: any) {
-            if (error?.code === "23505") {
+            const pgErrorCode = error?.code ?? error?.cause?.code;
+            if (pgErrorCode === "23505") {
                 metrics.webhooksRejected.add(1, { reason: "duplicate" });
 
                 const [existing] = await db
                     .select({ id: jobs.id, status: jobs.status })
                     .from(jobs)
-                    .where(
-                        and(
-                            eq(jobs.pipelineId, pipeline.id),
-                            eq(jobs.idempotencyKey, idempotencyKey!),
-                        ),
-                    )
+                    .where(eq(jobs.idempotencyKey, idempotencyKey!))
                     .limit(1);
+
+                if (!existing) {
+                    response.status(409).json({
+                        error: "Idempotency key already used by another pipeline.",
+                    });
+                    return;
+                }
 
                 response.status(200).json({
                     id: existing.id,
