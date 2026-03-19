@@ -153,6 +153,25 @@ When notifications are dispatched:
 
 ---
 
+### Database Schema
+
+The system uses PostgreSQL with the following entity relationships:
+
+![ER Diagram](docs/ER%20Diagram.png)
+
+**Key Tables:**
+| Table | Purpose |
+|-------|---------|
+| `users` | User accounts and authentication |
+| `pipelines` | Webhook processing configurations |
+| `processing_actions` | Ordered actions within each pipeline |
+| `subscribers` | Destination URLs for processed webhooks |
+| `jobs` | Individual webhook processing jobs |
+| `delivery_attempts` | Record of each notification delivery attempt |
+| `outbox_messages` | Transactional outbox for reliable messaging |
+
+---
+
 ## Design Decisions & Tradeoffs
 
 ### 1. Transactional Outbox Pattern
@@ -806,8 +825,6 @@ src/
 - [x] **Multi-tier Rate Limiting** — Protection at global, user, and pipeline levels
 - [x] **JWT Authentication** — Access + refresh token rotation
 - [x] **Prometheus Metrics** — Full observability for all operations
-- [x] **Structured Logging** — JSON logs with correlation
-- [x] **Docker Compose Setup** — One-command local deployment
 
 ### Future Enhancements
 
