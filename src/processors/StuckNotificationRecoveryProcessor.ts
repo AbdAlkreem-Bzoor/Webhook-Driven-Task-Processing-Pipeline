@@ -1,5 +1,3 @@
-// StuckNotificationRecoveryProcessor.ts
-
 import { eq, and, lt } from "drizzle-orm";
 import { jobs, outboxMessages } from "../db/schema.js";
 import { AppMetrics } from "../diagnostics/AppMetrics.js";

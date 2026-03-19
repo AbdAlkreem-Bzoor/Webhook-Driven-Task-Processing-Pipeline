@@ -1,5 +1,5 @@
-
 import { ProcessingActionType } from "../../processing-actions/ProcessingAction.js";
+
 
 export interface ActionRequest {
     actionType: ProcessingActionType;

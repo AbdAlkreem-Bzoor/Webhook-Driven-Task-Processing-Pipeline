@@ -1,4 +1,4 @@
-// EnrichAction.ts
+
 // Adds computed fields to the payload based on configuration.
 //
 // Configuration format (JSON string):
@@ -39,10 +39,10 @@ export class EnrichAction implements IProcessingAction {
             return { success: false, outputJson: inputJson, reason: "Invalid JSON payload." };
         }
 
-        // Parse configuration with defaults
         let config: EnrichConfig = {
             addTimestamp: true,
         };
+
         if (configuration && configuration !== "{}") {
             try {
                 const userConfig = JSON.parse(configuration);
@@ -52,36 +52,34 @@ export class EnrichAction implements IProcessingAction {
             }
         }
 
-        // Add timestamp
         if (config.addTimestamp) {
             payload.processedAt = new Date().toISOString();
         }
 
-        // Add hash of specified field
         if (config.addHash && typeof config.addHash === "string") {
             const fieldValue = payload[config.addHash];
             if (fieldValue !== undefined) {
                 const valueToHash = typeof fieldValue === "string"
                     ? fieldValue
                     : JSON.stringify(fieldValue);
+
                 payload.payloadHash = createHash("sha256")
                     .update(valueToHash, "utf8")
                     .digest("hex");
             }
         }
 
-        // Add UUID
         if (config.addUuid) {
             payload.enrichmentId = randomUUID();
         }
 
-        // Add custom fields
         if (config.customFields && typeof config.customFields === "object") {
             for (const [key, value] of Object.entries(config.customFields)) {
                 payload[key] = value;
             }
         }
 
-        return { success: true, outputJson: JSON.stringify(payload) };
+        return { 
+            success: true, outputJson: JSON.stringify(payload) };
     }
 }

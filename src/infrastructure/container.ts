@@ -1,7 +1,3 @@
-// infrastructure/container.ts
-// Replaces DependencyInjection.cs — the composition root.
-// All dependencies are constructed once and shared (singleton by default).
-
 import * as amqp from "amqplib";
 import { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
 import { resourceFromAttributes } from "@opentelemetry/resources";
@@ -58,16 +54,12 @@ export interface Container {
     // Metrics
     metrics: AppMetrics;
 
-    // Teardown
     dispose(): Promise<void>;
 }
 
 export async function buildContainer(): Promise<Container> {
     const logger = new Logger();
 
-    // -------------------------------------------------------------------------
-    // Observability — replaces AddObservability()
-    // -------------------------------------------------------------------------
     const prometheusExporter = new PrometheusExporter({ port: 9464 });
 
     const meterProvider = new MeterProvider({
@@ -80,9 +72,6 @@ export async function buildContainer(): Promise<Container> {
 
     const metrics = new AppMetrics(meterProvider);
 
-    // -------------------------------------------------------------------------
-    // RabbitMQ connection — replaces AddRabbitMqConfiguration()
-    // -------------------------------------------------------------------------
     const rabbitConnection = await amqp.connect({
         hostname: configuration.rabbitmq.hostname,
         port: configuration.rabbitmq.port,
@@ -90,9 +79,7 @@ export async function buildContainer(): Promise<Container> {
         password: configuration.rabbitmq.password,
     });
 
-    // -------------------------------------------------------------------------
-    // Publishers — replaces AddJobPublisher() / AddNotificationPublisher()
-    // -------------------------------------------------------------------------
+
     const jobPublisher = new RabbitMqJobPublisher(
         await rabbitConnection.createConfirmChannel(),
         buildRabbitMqOptions("jobs"),
@@ -107,25 +94,16 @@ export async function buildContainer(): Promise<Container> {
         logger,
     );
 
-    // -------------------------------------------------------------------------
-    // Identity — replaces AddTransient<IIdentityService> / AddTransient<ITokenProvider>
-    // -------------------------------------------------------------------------
     const identityService = new IdentityService();
 
     const tokenProvider = new TokenProvider(configuration.jwt);
 
-    // -------------------------------------------------------------------------
-    // Processing actions — replaces AddSingleton<IProcessingAction, ...>()
-    // -------------------------------------------------------------------------
     const processingActions = [
         new ValidateAction(),
         new TransformAction(),
         new EnrichAction(),
     ];
 
-    // -------------------------------------------------------------------------
-    // Core services — replaces AddSingleton<IProcessingService> etc.
-    // -------------------------------------------------------------------------
     const processingService = new ProcessingService(
         processingActions,
         metrics,
@@ -137,9 +115,6 @@ export async function buildContainer(): Promise<Container> {
         logger,
     );
 
-    // -------------------------------------------------------------------------
-    // Consumers — replaces AddJobConsumer() / AddNotificationConsumer()
-    // -------------------------------------------------------------------------
     const jobConsumer = new RabbitMqJobConsumer(
         await rabbitConnection.createConfirmChannel(),
         processingService,
@@ -156,9 +131,6 @@ export async function buildContainer(): Promise<Container> {
         logger,
     );
 
-    // -------------------------------------------------------------------------
-    // Outbox processors — replaces AddQuartzProcessors()
-    // -------------------------------------------------------------------------
     const jobCreatedProcessor = new JobCreatedEventOutboxProcessor(
         jobPublisher,
         metrics,
@@ -207,11 +179,10 @@ export async function buildContainer(): Promise<Container> {
     };
 }
 
-// Builds RabbitMqOptions from flat configuration values —
-// replaces CreateEndpointOptions()
-function buildRabbitMqOptions(endpoint: "jobs" | "notifications"): RabbitMqOptions {
+
+function buildRabbitMqOptions(option: "jobs" | "notifications"): RabbitMqOptions {
     const base = configuration.rabbitmq;
-    const ep = base[endpoint];
+    const ep = base[option];
 
     return {
         ...defaultRabbitMqOptions,

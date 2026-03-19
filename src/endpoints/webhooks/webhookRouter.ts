@@ -1,5 +1,3 @@
-// webhooks/webhookRouter.ts
-
 import { Router, Request, Response } from "express";
 import { eq, and } from "drizzle-orm";
 import { pipelines, jobs, outboxMessages } from "../../db/schema.js";
@@ -7,6 +5,7 @@ import { AppMetrics } from "../../diagnostics/AppMetrics.js";
 import { isValidWebhookSignature } from "../../services/WebhookSignatureVerification.js";
 import { validateSchema } from "../../services/SchemaValidator.js";
 import { db } from "../../db/index.js";
+
 
 export function createWebhookRouter(
     metrics: AppMetrics

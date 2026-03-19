@@ -1,5 +1,3 @@
-// OutboxProcessorBase.ts
-
 import { eq, isNull, lte, lt, or, and } from "drizzle-orm";
 import { outboxMessages, EventType, OutboxMessage } from "../db/schema.js";
 import { AppMetrics } from "../diagnostics/AppMetrics.js";

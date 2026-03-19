@@ -1,4 +1,3 @@
-// TokenProvider.ts
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 import { refreshTokens } from "../db/schema.js";
@@ -8,12 +7,14 @@ import { SecurityTokenError } from "../errors.js";
 import { ITokenProvider } from "../abstractions/ITokenProvider.js";
 import { db } from "../db/index.js";
 
+
 interface JwtSettings {
     secret: string;
     issuer: string;
     defaultDuration: number; // in seconds
     refreshDuration: number;
 }
+
 
 export class TokenProvider implements ITokenProvider {
     constructor(

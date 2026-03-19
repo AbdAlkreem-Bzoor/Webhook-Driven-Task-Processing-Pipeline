@@ -12,10 +12,7 @@
     "migrate": "drizzle-kit migrate",
     "test": "vitest --run",
     "lint": "eslint src/",
-    "seed": "npx tsx scripts/seed.ts",
-    "rabbit:start": "./src/scripts/rabbit.sh start",
-    "rabbit:stop": "./src/scripts/rabbit.sh stop",
-    "rabbit:logs": "./src/scripts/rabbit.sh logs"
+    "seed": "npx tsx scripts/seed.ts"
   },
   "keywords": [],
   "author": "",

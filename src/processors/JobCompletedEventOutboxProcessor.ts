@@ -1,10 +1,10 @@
-// JobCompletedEventOutboxProcessor.ts
-
 import { AppMetrics } from "../diagnostics/AppMetrics.js";
 import { INotificationPublisher } from "../abstractions/INotificationPublisher.js";
 import { OutboxProcessorBase } from "./OutboxProcessorBase.js";
 import { EventType } from "../db/schema.js";
 import { Logger } from "../logger.js";
+
+
 
 export class JobCompletedEventOutboxProcessor extends OutboxProcessorBase {
     static readonly intervalInSeconds = 2;

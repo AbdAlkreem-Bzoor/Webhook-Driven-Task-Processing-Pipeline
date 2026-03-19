@@ -1,5 +1,3 @@
-// auth/authRouter.ts
-
 import { Router, Request, Response } from "express";
 import { eq, and } from "drizzle-orm";
 import { refreshTokens } from "../../db/schema.js";

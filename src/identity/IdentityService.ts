@@ -1,4 +1,3 @@
-// IdentityService.ts
 import { eq } from "drizzle-orm";
 import { users, userRoles, userClaims } from "../db/schema.js";
 import { AppUserDto } from "./types.js";
@@ -6,6 +5,7 @@ import { checkPasswordHash } from "../authentication.js";
 import { UnauthorizedError, NotFoundError } from "../errors.js";
 import { IIdentityService } from "../abstractions/IIdentityService.js";
 import { db } from "../db/index.js";
+
 
 export class IdentityService implements IIdentityService {
     constructor() {}

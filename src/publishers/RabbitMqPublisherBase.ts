@@ -1,9 +1,9 @@
-// RabbitMqPublisherBase.ts
-
 import * as amqp from "amqplib";
 import { RabbitMqOptions } from "../options.js";
 import { AppMetrics } from "../diagnostics/AppMetrics.js";
 import { Logger } from "../logger.js";
+
+
 
 export abstract class RabbitMqPublisherBase implements AsyncDisposable {
     private exchangeDeclared = false;

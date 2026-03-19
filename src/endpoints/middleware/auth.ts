@@ -1,5 +1,3 @@
-// middleware/auth.ts
-
 import { Request, Response, NextFunction } from "express";
 import { validateJWT, getBearerToken } from "../../authentication.js";
 import { configuration } from "../../configuration.js";

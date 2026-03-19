@@ -1,6 +1,3 @@
-// scripts/seed.ts
-// Run: npx tsx scripts/seed.ts
-
 import { db } from "../src/db/index.js";
 import { users } from "../src/db/schema.js";
 import { hashPassword } from "../src/authentication.js";

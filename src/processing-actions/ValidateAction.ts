@@ -1,4 +1,4 @@
-// ValidateAction.ts
+
 // Validates that the incoming payload is valid JSON and optionally matches
 // a schema defined in the configuration.
 //
@@ -25,7 +25,6 @@ export class ValidateAction implements IProcessingAction {
     readonly actionType = ProcessingActionType.Validate;
 
     execute(inputJson: string, configuration: string): ProcessingActionResult {
-        // Parse the payload
         let payload: unknown;
         try {
             payload = JSON.parse(inputJson);
@@ -33,14 +32,12 @@ export class ValidateAction implements IProcessingAction {
             return { success: false, outputJson: inputJson, reason: "Invalid JSON payload." };
         }
 
-        // Must be an object
         if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
             return { success: false, outputJson: inputJson, reason: "Payload must be a JSON object." };
         }
 
         const obj = payload as Record<string, unknown>;
 
-        // Parse configuration
         let config: ValidateConfig = {};
         if (configuration && configuration !== "{}") {
             try {
@@ -50,12 +47,10 @@ export class ValidateAction implements IProcessingAction {
             }
         }
 
-        // Check for empty object if not allowed
         if (!config.allowEmpty && Object.keys(obj).length === 0) {
             return { success: false, outputJson: inputJson, reason: "Payload cannot be empty." };
         }
 
-        // Check required fields
         if (config.requiredFields && config.requiredFields.length > 0) {
             const missingFields: string[] = [];
             for (const field of config.requiredFields) {

@@ -1,6 +1,6 @@
-// WebhookSignatureVerification.ts
-
 import { createHmac, timingSafeEqual } from "crypto";
+
+
 
 export function isValidWebhookSignature(
     payload: string,

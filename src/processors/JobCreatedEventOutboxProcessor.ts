@@ -1,10 +1,10 @@
-// JobCreatedEventOutboxProcessor.ts
-
 import { AppMetrics } from "../diagnostics/AppMetrics.js";
 import { IJobPublisher } from "../abstractions/IJobPublisher.js";
 import { OutboxProcessorBase } from "./OutboxProcessorBase.js";
 import { EventType } from "../db/schema.js";
 import { Logger } from "../logger.js";
+
+
 
 export class JobCreatedEventOutboxProcessor extends OutboxProcessorBase {
     static readonly intervalInSeconds = 2;

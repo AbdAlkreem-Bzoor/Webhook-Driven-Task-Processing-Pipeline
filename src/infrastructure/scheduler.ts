@@ -1,6 +1,3 @@
-// infrastructure/scheduler.ts
-// Replaces AddQuartzProcessors() — runs processors on fixed intervals via setInterval.
-
 import { JobCreatedEventOutboxProcessor } from "../processors/JobCreatedEventOutboxProcessor.js";
 import { JobCompletedEventOutboxProcessor } from "../processors/JobCompletedEventOutboxProcessor.js";
 import { StuckJobRecoveryProcessor } from "../processors/StuckJobRecoveryProcessor.js";
@@ -12,7 +9,6 @@ export function startScheduler(
     stuckJobProcessor: StuckJobRecoveryProcessor,
     stuckNotificationProcessor: StuckNotificationRecoveryProcessor,
 ): () => void {
-    // Replaces [DisallowConcurrentExecution] — skip if previous run still in progress
     function schedule(
         fn: () => Promise<void>,
         intervalMs: number,
@@ -49,6 +45,5 @@ export function startScheduler(
         ),
     ];
 
-    // Returns a cleanup function
     return () => timers.forEach(clearInterval);
 }

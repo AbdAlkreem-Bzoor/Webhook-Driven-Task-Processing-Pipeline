@@ -1,4 +1,4 @@
-// TransformAction.ts
+
 // Transforms and normalizes data in the payload based on configuration.
 //
 // Configuration format (JSON string):
@@ -39,7 +39,6 @@ export class TransformAction implements IProcessingAction {
             return { success: false, outputJson: inputJson, reason: "Invalid JSON payload." };
         }
 
-        // Parse configuration with defaults
         let config: TransformConfig = {
             trimStrings: true,
             roundNumbers: 2,
@@ -53,7 +52,6 @@ export class TransformAction implements IProcessingAction {
             }
         }
 
-        // Apply transformations
         payload = this.transformObject(payload, config);
 
         return { success: true, outputJson: JSON.stringify(payload) };
@@ -66,14 +64,12 @@ export class TransformAction implements IProcessingAction {
         const result: Record<string, unknown> = {};
 
         for (const [key, value] of Object.entries(obj)) {
-            // Skip null/undefined if configured
             if (config.removeNulls && (value === null || value === undefined)) {
                 continue;
             }
 
             let transformedValue = value;
 
-            // Handle strings
             if (typeof value === "string") {
                 let strValue = value;
 
@@ -92,18 +88,15 @@ export class TransformAction implements IProcessingAction {
                 transformedValue = strValue;
             }
 
-            // Handle numbers
             if (typeof value === "number" && config.roundNumbers !== undefined) {
                 const factor = Math.pow(10, config.roundNumbers);
                 transformedValue = Math.round(value * factor) / factor;
             }
 
-            // Handle nested objects
             if (typeof value === "object" && value !== null && !Array.isArray(value)) {
                 transformedValue = this.transformObject(value as Record<string, unknown>, config);
             }
 
-            // Handle arrays
             if (Array.isArray(value)) {
                 transformedValue = value.map(item => {
                     if (typeof item === "object" && item !== null) {

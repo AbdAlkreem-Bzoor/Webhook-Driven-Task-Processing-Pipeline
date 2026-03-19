@@ -1,6 +1,3 @@
-// main.ts
-// Replaces Program.cs startup — builds container, runs migrations, starts server.
-
 import { buildContainer } from "./infrastructure/container.js";
 import { startScheduler } from "./infrastructure/scheduler.js";
 import { createApp } from "./app.js";
@@ -10,7 +7,6 @@ import { configuration } from "./configuration.js";
 
 
 async function main() {
-    // Auto-apply pending migrations — replaces db.Database.Migrate()
     await migrate(db, configuration.db.migrationConfiguration);
 
     const container = await buildContainer();
@@ -21,7 +17,6 @@ async function main() {
         container.stuckNotificationRecoveryProcessor,
     );
 
-    // Start RabbitMQ consumers — replaces JobConsumerHostedService
     await container.jobConsumer.subscribeAsync();
     await container.notificationConsumer.subscribeAsync();
 
@@ -31,7 +26,6 @@ async function main() {
         console.log(`Server running on port ${port}`);
     });
 
-    // Graceful shutdown — replaces IHostedService.StopAsync / IAsyncDisposable
     const shutdown = async (signal: string) => {
         console.log(`${signal} received — shutting down gracefully`);
 

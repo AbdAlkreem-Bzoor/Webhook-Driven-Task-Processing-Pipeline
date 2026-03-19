@@ -1,5 +1,3 @@
-// StuckJobRecoveryProcessor.ts
-
 import { eq, and, lt } from "drizzle-orm";
 import { AppMetrics } from "../diagnostics/AppMetrics.js";
 import { jobs, outboxMessages } from "../db/schema.js";
