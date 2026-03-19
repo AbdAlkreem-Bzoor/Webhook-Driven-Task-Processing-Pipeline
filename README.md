@@ -16,6 +16,7 @@ A service that receives webhooks, processes them through a job queue, and delive
 - [Reliability & Fault Tolerance](#reliability--fault-tolerance)
 - [Security](#security)
 - [Monitoring & Observability](#monitoring--observability)
+- [CI/CD](#cicd)
 - [Project Structure](#project-structure)
 - [Requirements Fulfilled](#requirements-fulfilled)
 
@@ -716,6 +717,32 @@ Available at `http://localhost:9464/metrics`
 ### Logging
 
 Structured JSON logs with levels: `info`, `warn`, `error`
+
+---
+
+## CI/CD
+
+The project uses GitHub Actions for continuous integration and deployment.
+
+### CI Pipeline
+
+Runs on every push to `main`/`develop` and on pull requests to `main`.
+
+| Step | Description |
+|------|-------------|
+| **Type Check** | Validates TypeScript types |
+| **Lint** | Runs ESLint for code quality |
+| **Test** | Runs the test suite with PostgreSQL and RabbitMQ services |
+| **Build** | Compiles TypeScript to JavaScript |
+
+### CD Pipeline
+
+Runs automatically after a successful CI pipeline on `main`.
+
+| Step | Description |
+|------|-------------|
+| **Build Image** | Builds the Docker image |
+| **Push to Registry** | Pushes to Docker Hub with `latest` and commit SHA tags |
 
 ---
 
