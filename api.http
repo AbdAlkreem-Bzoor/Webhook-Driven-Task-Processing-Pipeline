@@ -1,13 +1,15 @@
-### Webhook Pipeline API Tests
-### Usage:
-### 1. Start services: docker compose up --build
-### 2. Run the login request first to get tokens
-### 3. Create a pipeline to get webhookUrl
-### 4. Test webhooks and check job status
+# I used this file for clear explanation of the project architecture and key technical decisions (10 mins video)
 
-### ===========================================
-### VARIABLES
-### ===========================================
+
+
+# for anyone trying to test the system, here are the steps to get it running and see the demo in action:
+
+
+# 1. Start services:     docker compose up -d
+# 2. Run migrations:     docker compose exec app npm run migrate
+# 3. Seed test user:     docker compose exec app npm run seed
+# 4. Run requests below to inspect the system behavior
+
 
 @baseUrl = http://localhost:3000/api
 @accessToken = {{login.response.body.accessToken}}
@@ -17,12 +19,13 @@
 @jobId = {{sendWebhook.response.body.id}}
 
 
-### ===========================================
-### AUTHENTICATION
-### ===========================================
 
-### Login - Get access and refresh tokens
-### Note: Create a test user first (see SEED DATA section at bottom)
+###################################################
+## AUTHENTICATION
+###################################################
+
+
+## LOGIN - Authenticate and receive JWT tokens
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -32,9 +35,9 @@ Content-Type: application/json
     "password": "password123"
 }
 
-###
 
-### Refresh expired access token
+
+### REFRESH TOKEN - Get new access token without re-login
 POST {{baseUrl}}/auth/refresh
 Content-Type: application/json
 
@@ -43,9 +46,10 @@ Content-Type: application/json
     "refreshToken": "{{refreshToken}}"
 }
 
-###
 
-### Test: Login with wrong password (should fail)
+
+### Invalid credentials
+
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -54,38 +58,24 @@ Content-Type: application/json
     "password": "wrong-password"
 }
 
-###
-
-### Test: Login with non-existent user (should fail)
-POST {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-    "email": "nonexistent@example.com",
-    "password": "password123"
-}
 
 
-### ===========================================
-### PIPELINES - CRUD Operations
-### ===========================================
 
-### List all pipelines
-GET {{baseUrl}}/pipelines
-Authorization: Bearer {{accessToken}}
+###################################################
+## PIPELINE
+###################################################                                                                     
 
-###
 
-### Create a basic pipeline with all 3 actions
+### CREATE PIPELINE - Full featured with all 3 action types
 # @name createPipeline
 POST {{baseUrl}}/pipelines
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-    "name": "Order Processing Pipeline",
+    "name": "E-Commerce Order Pipeline",
     "subscriberUrls": [
-        "https://webhook.site/your-unique-url"
+        "https://webhook.site/b5ca3aee-f45f-4f20-8503-d5b813906481"
     ],
     "actions": [
         {
@@ -109,565 +99,446 @@ Content-Type: application/json
     ]
 }
 
-###
 
-### Create pipeline with validation only
+
+
+
+### LIST ALL PIPELINES - owned by the authenticated user
+GET {{baseUrl}}/pipelines
+Authorization: Bearer {{accessToken}}
+
+
+
+### GET SINGLE PIPELINE
+GET {{baseUrl}}/pipelines/{{pipelineId}}
+Authorization: Bearer {{accessToken}}
+
+
+
+
+### CREATE: Validation-only pipeline
 POST {{baseUrl}}/pipelines
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-    "name": "Simple Validation Pipeline",
-    "subscriberUrls": [
-        "https://webhook.site/test-validation"
-    ],
+    "name": "Data Validation Gate",
+    "subscriberUrls": ["https://webhook.site/validation-only"],
     "actions": [
         {
             "actionType": "Validate",
             "configuration": "{\"requiredFields\": [\"id\", \"type\", \"data\"]}",
-            "name": "Validate Payload",
+            "name": "Strict Schema Check",
             "order": 0
         }
     ]
 }
 
-###
 
-### Create pipeline with transform only
+
+
+### CREATE: Transform-only pipeline
 POST {{baseUrl}}/pipelines
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
     "name": "Data Cleanup Pipeline",
-    "subscriberUrls": [
-        "https://webhook.site/test-transform"
-    ],
+    "subscriberUrls": ["https://webhook.site/transform-only"],
     "actions": [
         {
             "actionType": "Transform",
             "configuration": "{\"trimStrings\": true, \"uppercaseFields\": [\"countryCode\"], \"lowercaseFields\": [\"email\"], \"removeNulls\": true}",
-            "name": "Clean Data",
+            "name": "Normalize & Clean",
             "order": 0
         }
     ]
 }
 
-###
 
-### Create pipeline with enrichment only
+
+### CREATE: Multi-subscriber fan-out pipeline
 POST {{baseUrl}}/pipelines
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-    "name": "Timestamp Pipeline",
+    "name": "Multi-Destination Fan-Out",
     "subscriberUrls": [
-        "https://webhook.site/test-enrich"
+        "https://webhook.site/primary",
+        "https://webhook.site/analytics",
+        "https://webhook.site/backup"
     ],
     "actions": [
         {
             "actionType": "Enrich",
-            "configuration": "{\"addTimestamp\": true, \"customFields\": {\"source\": \"webhook\", \"version\": \"1.0\"}}",
-            "name": "Add Metadata",
+            "configuration": "{\"addTimestamp\": true, \"customFields\": {\"source\": \"webhook-pipeline\", \"version\": \"1.0\"}}",
+            "name": "Add Routing Metadata",
             "order": 0
         }
     ]
 }
 
-###
 
-### Create pipeline with multiple subscribers (fan-out)
-POST {{baseUrl}}/pipelines
+
+
+
+### UPDATE PIPELINE
+PUT {{baseUrl}}/pipelines/{{pipelineId}}
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-    "name": "Multi-Destination Pipeline",
+    "name": "Updated Pipeline Name",
     "subscriberUrls": [
-        "https://webhook.site/primary-endpoint",
-        "https://webhook.site/analytics-endpoint",
-        "https://webhook.site/backup-endpoint"
-    ],
-    "actions": [
-        {
-            "actionType": "Validate",
-            "configuration": "{}",
-            "order": 0
-        },
-        {
-            "actionType": "Enrich",
-            "configuration": "{\"addTimestamp\": true}",
-            "order": 1
-        }
+        "https://webhook.site/new-destination"
     ]
 }
 
-###
 
-### Get pipeline by ID
-GET {{baseUrl}}/pipelines/{{pipelineId}}
-Authorization: Bearer {{accessToken}}
 
-###
-
-### Update pipeline name
-PUT {{baseUrl}}/pipelines/{{pipelineId}}
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-    "name": "Updated Pipeline Name"
-}
-
-###
-
-### Update pipeline subscribers
-PUT {{baseUrl}}/pipelines/{{pipelineId}}
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-    "subscriberUrls": [
-        "https://webhook.site/new-primary",
-        "https://webhook.site/new-secondary"
-    ]
-}
-
-###
-
-### Update pipeline actions
-PUT {{baseUrl}}/pipelines/{{pipelineId}}
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-    "actions": [
-        {
-            "actionType": "Validate",
-            "configuration": "{\"requiredFields\": [\"id\"]}",
-            "order": 0
-        },
-        {
-            "actionType": "Enrich",
-            "configuration": "{\"addTimestamp\": true, \"addUuid\": true}",
-            "order": 1
-        }
-    ]
-}
-
-###
-
-### Test: Create pipeline without name (should fail)
-POST {{baseUrl}}/pipelines
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-    "subscriberUrls": ["https://webhook.site/test"]
-}
-
-###
-
-### Test: Create pipeline without subscribers (should fail)
-POST {{baseUrl}}/pipelines
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-    "name": "No Subscribers Pipeline"
-}
-
-###
-
-### Test: Create pipeline with invalid action type (should fail)
-POST {{baseUrl}}/pipelines
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-    "name": "Invalid Actions Pipeline",
-    "subscriberUrls": ["https://webhook.site/test"],
-    "actions": [
-        {
-            "actionType": "InvalidActionType",
-            "configuration": "{}",
-            "order": 0
-        }
-    ]
-}
-
-###
-
-### Delete pipeline (use with caution - removes all associated data)
+### DELETE PIPELINE
 DELETE {{baseUrl}}/pipelines/{{pipelineId}}
 Authorization: Bearer {{accessToken}}
 
 
-### ===========================================
-### WEBHOOKS - Send data to pipelines
-### ===========================================
 
-### Send valid webhook - basic order
+
+###################################################
+## WEBHOOK INGESTION
+###################################################
+
+
+### SEND WEBHOOK - Valid e-commerce order
 # @name sendWebhook
 POST {{baseUrl}}/webhooks/{{sourceId}}
 Content-Type: application/json
-X-Idempotency-Key: order-001-{{$timestamp}}
+X-Idempotency-Key: demo-order-001
 
 {
     "orderId": "ORD-2024-001",
-    "amount": 149.99,
+    "amount": 149.9999,
     "email": "  CUSTOMER@EXAMPLE.COM  ",
     "status": "completed",
     "items": [
-        {"name": "Product A", "quantity": 2, "price": 49.99},
-        {"name": "Product B", "quantity": 1, "price": 50.01}
+        {"name": "  Widget Pro  ", "quantity": 2, "price": 49.995},
+        {"name": "  Gadget Plus  ", "quantity": 1, "price": 50.005}
     ]
 }
 
-###
 
-### Send webhook - e-commerce event
+
+
+### SEND WEBHOOK - Messy data (shows Transform in action)
 POST {{baseUrl}}/webhooks/{{sourceId}}
 Content-Type: application/json
-X-Idempotency-Key: ecom-{{$timestamp}}
+X-Idempotency-Key: messy-data-demo
 
 {
-    "orderId": "ORD-2024-002",
-    "amount": 299.50,
-    "email": "buyer@shop.com",
-    "countryCode": "us",
-    "paymentMethod": "credit_card",
-    "items": [
-        {"sku": "SKU-001", "name": "Widget Pro", "quantity": 3, "unitPrice": 99.83}
-    ],
-    "shipping": {
-        "method": "express",
-        "address": "  123 Main St  "
-    }
+    "orderId": "  MESSY-ORDER-001  ",
+    "amount": 99.9999999,
+    "email": "   MESSY.USER@EXAMPLE.COM   ",
+    "status": "  pending  ",
+    "price": 33.333333,
+    "notes": "   Extra spaces everywhere   "
 }
 
-###
 
-### Send webhook - user registration event
+
+
+### SEND WEBHOOK - Missing required fields (will be FILTERED)
 POST {{baseUrl}}/webhooks/{{sourceId}}
 Content-Type: application/json
-X-Idempotency-Key: user-reg-{{$timestamp}}
+X-Idempotency-Key: filtered-demo
 
 {
-    "orderId": "USR-2024-001",
-    "amount": 0,
-    "email": "NEWUSER@COMPANY.COM",
-    "eventType": "user.created",
-    "profile": {
-        "firstName": "  John  ",
-        "lastName": "  Doe  ",
-        "company": "Acme Corp"
-    }
+    "description": "This order is missing required fields",
+    "customerName": "John Doe"
 }
 
-###
 
-### Send webhook - payment notification
+
+
+### SEND WEBHOOK - Empty payload (will be FILTERED)
 POST {{baseUrl}}/webhooks/{{sourceId}}
 Content-Type: application/json
-X-Idempotency-Key: payment-{{$timestamp}}
-
-{
-    "orderId": "PAY-2024-001",
-    "amount": 500.00,
-    "email": "payer@bank.com",
-    "type": "payment.success",
-    "currency": "USD",
-    "metadata": {
-        "invoice": "INV-001",
-        "notes": "Monthly subscription"
-    }
-}
-
-###
-
-### Send webhook with signature verification
-### Generate: echo -n '{"orderId":"signed-001","amount":100}' | openssl dgst -sha256 -hmac 'your-webhook-secret'
-POST {{baseUrl}}/webhooks/{{sourceId}}
-Content-Type: application/json
-X-Webhook-Signature: sha256=<computed-signature-here>
-X-Idempotency-Key: signed-{{$timestamp}}
-
-{
-    "orderId": "signed-001",
-    "amount": 100
-}
-
-###
-
-### Test: Send duplicate webhook (should return existing job)
-POST {{baseUrl}}/webhooks/{{sourceId}}
-Content-Type: application/json
-X-Idempotency-Key: order-001-duplicate
-
-{
-    "orderId": "ORD-2024-001",
-    "amount": 149.99,
-    "email": "customer@example.com"
-}
-
-###
-
-### Test: Send webhook missing required fields (should be filtered)
-POST {{baseUrl}}/webhooks/{{sourceId}}
-Content-Type: application/json
-X-Idempotency-Key: missing-fields-{{$timestamp}}
-
-{
-    "description": "This payload is missing orderId and amount"
-}
-
-###
-
-### Test: Send empty webhook (should be filtered)
-POST {{baseUrl}}/webhooks/{{sourceId}}
-Content-Type: application/json
-X-Idempotency-Key: empty-{{$timestamp}}
+X-Idempotency-Key: empty-payload-demo
 
 {}
 
-###
 
-### Test: Send webhook with messy data (test Transform action)
+
+
+
+### IDEMPOTENCY TEST - Same key returns existing job
 POST {{baseUrl}}/webhooks/{{sourceId}}
 Content-Type: application/json
-X-Idempotency-Key: messy-data-{{$timestamp}}
+X-Idempotency-Key: idempotency-test-key
 
 {
-    "orderId": "  MESSY-001  ",
-    "amount": 99.9999999,
-    "email": "   MESSY.USER@EXAMPLE.COM   ",
-    "status": "  PENDING  ",
-    "nullField": null,
-    "items": [
-        {"name": "  Messy Product  ", "price": 33.333333}
-    ]
+    "orderId": "IDEM-001",
+    "amount": 100
 }
 
-###
 
-### Test: Send invalid JSON (should fail)
+
+
+
+### IDEMPOTENCY TEST - Verify duplicate returns same job
 POST {{baseUrl}}/webhooks/{{sourceId}}
 Content-Type: application/json
-X-Idempotency-Key: invalid-json-{{$timestamp}}
+X-Idempotency-Key: idempotency-test-key
 
-{invalid json here}
+{
+    "orderId": "IDEM-001",
+    "amount": 100
+}
 
 
-### ===========================================
-### JOBS - Track processing status
-### ===========================================
 
-### List all jobs (most recent first)
+
+
+### WEBHOOK WITH SIGNATURE VERIFICATION
+POST {{baseUrl}}/webhooks/{{sourceId}}
+Content-Type: application/json
+X-Webhook-Signature: sha256=<computed-signature-here>
+X-Idempotency-Key: signed-webhook-demo
+
+{
+    "orderId": "SIGNED-001",
+    "amount": 250.00,
+    "verified": true
+}
+
+
+
+
+###################################################
+## JOB TRACKING
+###################################################
+
+
+### LIST ALL JOBS
 GET {{baseUrl}}/jobs
 Authorization: Bearer {{accessToken}}
 
-###
 
-### List jobs with pagination
+
+
+
+### LIST JOBS - Paginated (page 1, 5 items)
 GET {{baseUrl}}/jobs?page=1&pageSize=5
 Authorization: Bearer {{accessToken}}
 
-###
 
-### List jobs - second page
-GET {{baseUrl}}/jobs?page=2&pageSize=5
-Authorization: Bearer {{accessToken}}
 
-###
 
-### List completed jobs only
+
+### LIST JOBS - Filter by status: Completed
 GET {{baseUrl}}/jobs?status=Completed
 Authorization: Bearer {{accessToken}}
 
-###
 
-### List failed jobs only
-GET {{baseUrl}}/jobs?status=Failed
-Authorization: Bearer {{accessToken}}
 
-###
 
-### List filtered jobs only
+
+### LIST JOBS - Filter by status: Filtered
 GET {{baseUrl}}/jobs?status=Filtered
 Authorization: Bearer {{accessToken}}
 
-###
 
-### List queued jobs (waiting for processing)
-GET {{baseUrl}}/jobs?status=Queued
+
+
+
+### LIST JOBS - Filter by status: Failed
+GET {{baseUrl}}/jobs?status=Failed
 Authorization: Bearer {{accessToken}}
 
-###
 
-### List processing jobs (currently running)
-GET {{baseUrl}}/jobs?status=Processing
-Authorization: Bearer {{accessToken}}
 
-###
 
-### List jobs for specific pipeline
+
+### LIST JOBS - Filter by pipeline
 GET {{baseUrl}}/jobs?pipelineId={{pipelineId}}
 Authorization: Bearer {{accessToken}}
 
-###
 
-### List jobs with multiple filters
-GET {{baseUrl}}/jobs?pipelineId={{pipelineId}}&status=Completed&page=1&pageSize=10
-Authorization: Bearer {{accessToken}}
 
-###
 
-### Get specific job details
+
+### GET JOB DETAILS
 GET {{baseUrl}}/jobs/{{jobId}}
 Authorization: Bearer {{accessToken}}
 
-###
 
-### Get job delivery attempts (detailed history)
+
+
+
+### GET JOB DELIVERIES
 GET {{baseUrl}}/jobs/{{jobId}}/deliveries
 Authorization: Bearer {{accessToken}}
 
 
-### ===========================================
-### HEALTH & MONITORING
-### ===========================================
 
-### Health check (server running test)
+
+###################################################
+## SYSTEM HEALTH & METRICS
+###################################################
+
+
+### HEALTH CHECK
 GET http://localhost:3000/
 
-###
 
-### Prometheus metrics
+
+
+
+### PROMETHEUS METRICS
 GET http://localhost:9464/metrics
 
 
-### ===========================================
-### ERROR HANDLING TESTS
-### ===========================================
+###################################################
+## ERROR HANDLING
+###################################################
 
-### Test: Access without authentication (should fail 401)
+
+### ERROR: Unauthorized (no token)
 GET {{baseUrl}}/pipelines
 
-###
 
-### Test: Access with expired/invalid token (should fail 401)
+
+
+
+### ERROR: Invalid token
 GET {{baseUrl}}/pipelines
 Authorization: Bearer invalid-token-here
 
 ###
 
-### Test: Access non-existent pipeline (should fail 404)
+### ERROR: Pipeline not found
 GET {{baseUrl}}/pipelines/00000000-0000-0000-0000-000000000000
 Authorization: Bearer {{accessToken}}
 
-###
 
-### Test: Access non-existent job (should fail 404)
-GET {{baseUrl}}/jobs/00000000-0000-0000-0000-000000000000
-Authorization: Bearer {{accessToken}}
 
-###
 
-### Test: Send webhook to non-existent pipeline (should fail 404)
+
+### ERROR: Webhook to non-existent pipeline
 POST {{baseUrl}}/webhooks/nonexistent-source-id
 Content-Type: application/json
 
 {"test": "data"}
 
 
-### ===========================================
-### COMPLETE TEST WORKFLOW
-### ===========================================
 
-### STEP 1: Login to get tokens
-### Run the login request above and save tokens
 
-### STEP 2: Create a test pipeline
-# @name workflowPipeline
+
+### ERROR: Invalid pipeline configuration
 POST {{baseUrl}}/pipelines
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-    "name": "Workflow Test Pipeline",
+    "name": "Invalid Pipeline",
+    "subscriberUrls": ["https://webhook.site/test"],
+    "actions": [
+        {
+            "actionType": "NonExistentAction",
+            "configuration": "{}",
+            "order": 0
+        }
+    ]
+}
+
+
+###################################################
+## COMPLETE WORKFLOW
+###################################################
+
+
+### STEP 1: Create a test pipeline
+# @name demoPipeline
+POST {{baseUrl}}/pipelines
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "name": "Video Demo Pipeline",
     "subscriberUrls": [
-        "https://webhook.site/workflow-test"
+        "https://webhook.site/b5ca3aee-f45f-4f20-8503-d5b813906481"
     ],
     "actions": [
         {
             "actionType": "Validate",
-            "configuration": "{\"requiredFields\": [\"id\", \"data\"]}",
+            "configuration": "{\"requiredFields\": [\"eventType\", \"data\"]}",
+            "name": "Validate Event Structure",
             "order": 0
         },
         {
             "actionType": "Transform",
-            "configuration": "{\"trimStrings\": true}",
+            "configuration": "{\"trimStrings\": true, \"lowercaseFields\": [\"eventType\"]}",
+            "name": "Normalize Event",
             "order": 1
         },
         {
             "actionType": "Enrich",
-            "configuration": "{\"addTimestamp\": true, \"addUuid\": true}",
+            "configuration": "{\"addTimestamp\": true, \"addUuid\": true, \"customFields\": {\"pipeline\": \"demo\", \"version\": \"1.0\"}}",
+            "name": "Add Tracing Metadata",
             "order": 2
         }
     ]
 }
 
-###
 
-### STEP 3: Send a test webhook
-@workflowSourceId = {{workflowPipeline.response.body.sourceId}}
-# @name workflowWebhook
-POST {{baseUrl}}/webhooks/{{workflowSourceId}}
+
+
+
+### STEP 2: Send a webhook to the pipeline
+@demoSourceId = {{demoPipeline.response.body.sourceId}}
+# @name demoWebhook
+POST {{baseUrl}}/webhooks/{{demoSourceId}}
 Content-Type: application/json
-X-Idempotency-Key: workflow-test-{{$timestamp}}
+X-Idempotency-Key: demo-video-{{$timestamp}}
 
 {
-    "id": "workflow-001",
+    "eventType": "  ORDER.CREATED  ",
     "data": {
-        "name": "  Test Data  ",
-        "value": 123.456789
+        "orderId": "  ORD-DEMO-001  ",
+        "customerEmail": "demo@example.com",
+        "total": 199.999,
+        "currency": "USD"
+    },
+    "metadata": {
+        "source": "  web-checkout  ",
+        "sessionId": "sess_123456"
     }
 }
 
-###
 
-### STEP 4: Check job status (wait a few seconds for processing)
-@workflowJobId = {{workflowWebhook.response.body.id}}
-GET {{baseUrl}}/jobs/{{workflowJobId}}
-Authorization: Bearer {{accessToken}}
 
-###
 
-### STEP 5: Check delivery status
-GET {{baseUrl}}/jobs/{{workflowJobId}}/deliveries
+
+### STEP 3: Check job status
+@demoJobId = {{demoWebhook.response.body.id}}
+GET {{baseUrl}}/jobs/{{demoJobId}}
 Authorization: Bearer {{accessToken}}
 
 
-### ===========================================
-### SEED DATA (Run in psql or database client)
-### ===========================================
 
-### -- Create a test user (password: password123)
-### -- First generate the hash in Node.js:
-### --
-### -- const argon2 = require('argon2');
-### -- argon2.hash('password123').then(console.log);
-### --
-### -- Then copy the hash and run:
-###
-### INSERT INTO users (id, user_name, email, hashed_password, created_at, updated_at)
-### VALUES (
-###     gen_random_uuid(),
-###     'Test User',
-###     'test@example.com',
-###     '$argon2id$v=19$m=65536,t=3,p=4$<YOUR_HASH_HERE>',
-###     NOW(),
-###     NOW()
-### );
+
+
+### STEP 4: Check delivery status
+GET {{baseUrl}}/jobs/{{demoJobId}}/deliveries
+Authorization: Bearer {{accessToken}}
+
+
+
+
+
+### STEP 5: View all jobs for the pipeline
+@demoPipelineId = {{demoPipeline.response.body.id}}
+GET {{baseUrl}}/jobs?pipelineId={{demoPipelineId}}
+Authorization: Bearer {{accessToken}}
+
+
+
