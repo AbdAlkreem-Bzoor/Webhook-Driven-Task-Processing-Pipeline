@@ -7,6 +7,7 @@ A service that receives webhooks, processes them through a job queue, and delive
 ## Table of Contents
 
 - [Overview](#overview)
+- [Technology Stack](#technology-stack)
 - [Key Features](#key-features)
 - [System Architecture](#system-architecture)
 - [Design Decisions & Tradeoffs](#design-decisions--tradeoffs)
@@ -19,6 +20,26 @@ A service that receives webhooks, processes them through a job queue, and delive
 - [CI/CD](#cicd)
 - [Project Structure](#project-structure)
 - [Requirements Fulfilled](#requirements-fulfilled)
+
+---
+
+## Technology Stack
+
+| Category | Technology |
+|----------|------------|
+| **Language** | TypeScript |
+| **Runtime** | Node.js 22 |
+| **Web Framework** | Express 5 |
+| **Database** | PostgreSQL 16 |
+| **ORM** | Drizzle ORM |
+| **Message Queue** | RabbitMQ 4 |
+| **Authentication** | JWT (jsonwebtoken) |
+| **Password Hashing** | Argon2id |
+| **Metrics** | OpenTelemetry + Prometheus |
+| **Testing** | Vitest |
+| **Linting** | ESLint |
+| **Containerization** | Docker + Docker Compose |
+| **CI/CD** | GitHub Actions |
 
 ---
 
@@ -803,32 +824,48 @@ src/
 └── abstractions/           # Interfaces
 ```
 
----
 
 ## Requirements Fulfilled
 
 ### Core Requirements
 
-- [x] **Webhook Ingestion** — Receive webhooks via HTTP, store in database
-- [x] **Message Queue Integration** — RabbitMQ for job distribution
-- [x] **Configurable Pipelines** — Multi-step processing with ordered actions
-- [x] **Fan-out Delivery** — Deliver to multiple subscribers
-- [x] **Retry Mechanism** — Exponential backoff for failed deliveries
-- [x] **Job Tracking** — Full status tracking from receipt to delivery
+| Requirement | Status | Implementation |
+|-------------|--------|----------------|
+| **CRUD API for managing pipelines** | ✅ | Full REST API at `/api/pipelines` — create, read, update, delete |
+| **Webhook ingestion with job queue** | ✅ | Webhooks received at `/api/webhooks/:sourceId`, queued via RabbitMQ |
+| **Worker for background processing** | ✅ | `RabbitMqJobConsumer` processes jobs, `RabbitMqNotificationConsumer` handles delivery |
+| **3+ processing action types** | ✅ | **Validate** (structure), **Transform** (normalize), **Enrich** (compute fields) |
+| **Subscriber delivery with retry logic** | ✅ | Exponential backoff (2s, 4s, 8s), 3 attempts per subscriber |
+| **API for job status & history** | ✅ | `GET /api/jobs`, `GET /api/jobs/:id`, `GET /api/jobs/:id/deliveries` |
+| **Docker Compose setup** | ✅ | `docker compose up` runs API, PostgreSQL, and RabbitMQ with healthchecks |
+| **GitHub Actions CI/CD** | ✅ | CI: type-check, lint, test, build. CD: Docker image push to registry |
+| **Documentation (README)** | ✅ | Setup, usage, API reference, architecture, and design decisions |
 
-### Additional Features
+### Evaluation Criteria Coverage
 
-- [x] **Transactional Outbox Pattern** — Guaranteed message delivery without dual-write problems
-- [x] **Idempotency Support** — Duplicate webhook detection via `X-Idempotency-Key`
-- [x] **Signature Verification** — HMAC-SHA256 webhook validation
-- [x] **Stuck Job Recovery** — Automatic detection and re-queuing of stuck jobs
-- [x] **Multi-tier Rate Limiting** — Protection at global, user, and pipeline levels
-- [x] **JWT Authentication** — Access + refresh token rotation
-- [x] **Prometheus Metrics** — Full observability for all operations
+| Area | What Was Delivered |
+|------|-------------------|
+| **Architecture** | Three-layer separation (API → Queue → Workers), transactional outbox pattern, clean schema with documented ER diagram |
+| **Reliability** | Retry logic with backoff, stuck job recovery processors, idempotency keys, graceful shutdown handling |
+| **Code Quality** | TypeScript throughout, interface-based abstractions, dependency injection, consistent error handling |
+| **Infrastructure** | Single `docker compose up` works immediately, CI runs tests with real PostgreSQL/RabbitMQ services |
+| **Documentation** | Comprehensive README with architecture diagrams, API reference, design decisions with tradeoff analysis |
+| **Creativity & Polish** | Transactional outbox, multi-tier rate limiting, Prometheus metrics, HMAC signature verification, recovery processors |
+
+### Stretch Goals Implemented
+
+| Feature | Description |
+|---------|-------------|
+| ✅ **Authentication** | JWT access tokens + refresh token rotation with Argon2id password hashing |
+| ✅ **Webhook Signature Verification** | HMAC-SHA256 with timing-safe comparison |
+| ✅ **Rate Limiting** | Multi-tier: global (100/min), auth (10/min), webhooks (30/min), API (60/min) |
+| ✅ **Metrics** | Prometheus endpoint with counters/histograms for all operations |
+| ✅ **Concurrency Control** | Database-level job claiming prevents duplicate processing |
 
 ### Future Enhancements
 
 - [ ] **Dead Letter Queue** — Store permanently failed jobs for manual review
 - [ ] **Webhook Replay** — Ability to manually retry failed webhooks
+- [ ] **Pipeline Chaining** — Output of one pipeline feeds into another
 - [ ] **Custom Action Plugins** — Allow users to define custom processing actions
 - [ ] **Dashboard UI** — Visual interface for pipeline management and monitoring
