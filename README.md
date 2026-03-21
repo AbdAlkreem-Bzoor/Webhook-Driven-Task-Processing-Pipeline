@@ -25,21 +25,21 @@ A service that receives webhooks, processes them through a job queue, and delive
 
 ## Technology Stack
 
-| Category | Technology |
-|----------|------------|
-| **Language** | TypeScript |
-| **Runtime** | Node.js 22 |
-| **Web Framework** | Express 5 |
-| **Database** | PostgreSQL 16 |
-| **ORM** | Drizzle ORM |
-| **Message Queue** | RabbitMQ 4 |
-| **Authentication** | JWT (jsonwebtoken) |
-| **Password Hashing** | Argon2id |
-| **Metrics** | OpenTelemetry + Prometheus |
-| **Testing** | Vitest |
-| **Linting** | ESLint |
-| **Containerization** | Docker + Docker Compose |
-| **CI/CD** | GitHub Actions |
+| Category             | Technology                 |
+| -------------------- | -------------------------- |
+| **Language**         | TypeScript                 |
+| **Runtime**          | Node.js 22                 |
+| **Web Framework**    | Express 5                  |
+| **Database**         | PostgreSQL 16              |
+| **ORM**              | Drizzle ORM                |
+| **Message Queue**    | RabbitMQ 4                 |
+| **Authentication**   | JWT (jsonwebtoken)         |
+| **Password Hashing** | Argon2id                   |
+| **Metrics**          | OpenTelemetry + Prometheus |
+| **Testing**          | Vitest                     |
+| **Linting**          | ESLint                     |
+| **Containerization** | Docker + Docker Compose    |
+| **CI/CD**            | GitHub Actions             |
 
 ---
 
@@ -73,18 +73,18 @@ The system runs on **PostgreSQL** for persistent storage, **RabbitMQ** for job q
 
 ## Key Features
 
-| Feature | Description |
-|---------|-------------|
-| **Reliable Ingestion** | Never lose a webhook — data is persisted before acknowledgment |
-| **Configurable Pipelines** | Chain multiple processing actions in any order |
-| **Fan-out Delivery** | Send processed results to multiple subscribers simultaneously |
-| **Automatic Retries** | Failed deliveries retry with exponential backoff |
-| **Idempotency** | Duplicate webhooks detected and deduplicated automatically |
-| **Signature Verification** | HMAC-SHA256 validation for secure webhook sources |
-| **Full Audit Trail** | Track every job from receipt through final delivery |
-| **Rate Limiting** | Protection at global, user, and pipeline levels |
-| **Prometheus Metrics** | Built-in observability for all operations |
-| **Graceful Recovery** | Stuck jobs automatically detected and re-queued |
+| Feature                    | Description                                                    |
+| -------------------------- | -------------------------------------------------------------- |
+| **Reliable Ingestion**     | Never lose a webhook — data is persisted before acknowledgment |
+| **Configurable Pipelines** | Chain multiple processing actions in any order                 |
+| **Fan-out Delivery**       | Send processed results to multiple subscribers simultaneously  |
+| **Automatic Retries**      | Failed deliveries retry with exponential backoff               |
+| **Idempotency**            | Duplicate webhooks detected and deduplicated automatically     |
+| **Signature Verification** | HMAC-SHA256 validation for secure webhook sources              |
+| **Full Audit Trail**       | Track every job from receipt through final delivery            |
+| **Rate Limiting**          | Protection at global, user, and pipeline levels                |
+| **Prometheus Metrics**     | Built-in observability for all operations                      |
+| **Graceful Recovery**      | Stuck jobs automatically detected and re-queued                |
 
 ---
 
@@ -99,11 +99,13 @@ The system is built on a **three-layer architecture** that separates concerns an
 **Purpose:** Handle all external communication
 
 **Components:**
+
 - **Webhook Endpoint** — Receives incoming webhooks, validates signatures, creates jobs
 - **Management API** — CRUD operations for pipelines, job queries, authentication
 - **Rate Limiter** — Protects against abuse at multiple tiers
 
 **Key Characteristics:**
+
 - Stateless
 - No blocking operations (processing happens asynchronously)
 
@@ -112,10 +114,12 @@ The system is built on a **three-layer architecture** that separates concerns an
 **Purpose:** Decouple ingestion from processing, ensure durability
 
 **Queues:**
+
 - `jobs_queue` — Newly created jobs waiting to be processed
 - `notifications_queue` — Completed jobs waiting for delivery
 
 **Key Characteristics:**
+
 - Durable queues (survive broker restarts)
 - Acknowledgment-based delivery (messages re-queued on failure)
 - Separate queues allow independent scaling of processing vs. delivery
@@ -125,12 +129,14 @@ The system is built on a **three-layer architecture** that separates concerns an
 **Purpose:** Execute the actual work asynchronously
 
 **Workers:**
+
 - **Job Consumer** — Processes jobs through pipeline actions
 - **Notification Consumer** — Delivers results to subscriber URLs
 - **Outbox Processor** — Polls database for events to publish
 - **Recovery Processor** — Detects and recovers stuck jobs
 
 **Key Characteristics:**
+
 - Long-running processes with graceful shutdown
 - Self-healing (crashed workers' jobs are recovered)
 
@@ -143,6 +149,7 @@ The system is built on a **three-layer architecture** that separates concerns an
 ![Webhook Endpoint](docs/Webhook%20endpoint.png)
 
 When a webhook arrives:
+
 1. Validate signature (if configured)
 2. Parse and optionally validate payload schema
 3. Create job record + outbox entry in single transaction
@@ -154,6 +161,7 @@ When a webhook arrives:
 ![Processing Flow](docs/Processing%20flow.png)
 
 When a job is consumed:
+
 1. Claim the job for processing
 2. Load pipeline configuration with ordered actions
 3. Execute each action sequentially, passing output to next
@@ -165,6 +173,7 @@ When a job is consumed:
 ![Notification Flow](docs/Notification%20flow.png)
 
 When notifications are dispatched:
+
 1. Claim the job for delivery
 2. Identify all subscribers
 3. Attempt delivery to each (in parallel)
@@ -181,15 +190,16 @@ The system uses PostgreSQL with the following entity relationships:
 ![ER Diagram](docs/ER%20Diagram.png)
 
 **Key Tables:**
-| Table | Purpose |
-|-------|---------|
-| `users` | User accounts and authentication |
-| `pipelines` | Webhook processing configurations |
-| `processing_actions` | Ordered actions within each pipeline |
-| `subscribers` | Destination URLs for processed webhooks |
-| `jobs` | Individual webhook processing jobs |
-| `delivery_attempts` | Record of each notification delivery attempt |
-| `outbox_messages` | Transactional outbox for reliable messaging |
+
+| Table                | Purpose                                      |
+| -------------------- | -------------------------------------------- |
+| `users`              | User accounts and authentication             |
+| `pipelines`          | Webhook processing configurations            |
+| `processing_actions` | Ordered actions within each pipeline         |
+| `subscribers`        | Destination URLs for processed webhooks      |
+| `jobs`               | Individual webhook processing jobs           |
+| `delivery_attempts`  | Record of each notification delivery attempt |
+| `outbox_messages`    | Transactional outbox for reliable messaging  |
 
 ---
 
@@ -204,11 +214,13 @@ How do we ensure a webhook is never lost, even if the system crashes between rec
 Instead of publishing directly to RabbitMQ, we write both the job AND an outbox event in a single database transaction. A background processor then reads unpublished events and publishes them.
 
 **What I Gained:**
+
 - **Zero data loss** — If it's in the database, it will be processed
 - **Atomic operations** — No partial states possible
 - **Crash recovery** — System can restart at any point safely
 
 **What I Traded:**
+
 - **Latency** — Adds a bit of latency between receipt and processing
 - **Complexity** — Requires background processor for outbox
 
@@ -223,11 +235,13 @@ Processing a webhook (CPU-bound transformations) and delivering it (network I/O-
 Two independent message queues with dedicated consumer pools. Processing claims jobs, transforms payloads, then creates outbox events for delivery. Delivery consumers handle I/O and retries.
 
 **What I Gained:**
+
 - **Independent scaling** — N processing workers + M delivery workers
 - **Isolation** — Slow subscriber URLs don't block processing
 - **Better resource utilization** — Each pool tuned for its workload
 
 **What I Traded:**
+
 - **Operational complexity** — Two queues to monitor instead of one
 - **Slightly longer latency** — Extra hop through database outbox
 
@@ -240,19 +254,23 @@ Multiple workers consume from the same queue. How do we prevent two workers from
 
 **The Solution:**
 Use PostgreSQL's atomic UPDATE with a WHERE clause:
+
 ```sql
 UPDATE jobs SET status = 'Processing'
 WHERE id = $id AND status = 'Queued'
 RETURNING id
 ```
+
 If no rows are returned, another worker already claimed it.
 
 **What I Gained:**
+
 - **Simplicity** — No external locking service needed
 - **Reliability** — Database ACID guarantees prevent races
 - **Visibility** — Job state always reflects reality
 
 **What I Traded:**
+
 - **Throughput ceiling** — Single database limits horizontal scale
 - **Database load** — Each claim is a transaction
 
@@ -266,20 +284,22 @@ Building a pipeline system that can handle various webhook types while still pro
 **The Solution:**
 Three configurable action types that work with any JSON payload:
 
-| Action | Purpose |
-|--------|---------|
-| **Validate** | Ensures payload structure (required fields, non-empty) |
+| Action        | Purpose                                                   |
+| ------------- | --------------------------------------------------------- |
+| **Validate**  | Ensures payload structure (required fields, non-empty)    |
 | **Transform** | Normalizes data (trim strings, case conversion, rounding) |
-| **Enrich** | Adds computed fields (timestamps, hashes, UUIDs) |
+| **Enrich**    | Adds computed fields (timestamps, hashes, UUIDs)          |
 
 Each action accepts a configuration object, making them flexible for different use cases.
 
 **What I Gained:**
+
 - **Flexibility** — Works with any JSON webhook payload
 - **Composability** — Chain actions in any order
 - **Configurability** — Each action's behavior is customizable
 
 **What I Traded:**
+
 - **Domain specificity** — No built-in business logic for specific use cases
 
 ---
@@ -293,11 +313,13 @@ When a subscriber endpoint is down, how aggressively should we retry?
 3 attempts with exponential backoff: 2s, 4s, 8s delays between retries.
 
 **What I Gained:**
+
 - **Gentle on failing services** — Don't overwhelm them while they recover
 - **Fast success path** — Healthy endpoints see no delay
 - **Predictable max time** — Job completes within known timeframe
 
 **What I Traded:**
+
 - **Slower recovery** — If endpoint recovers after 3s, must wait for second retry
 - **Limited attempts** — 3 retries may not be enough for extended outages
 
@@ -314,7 +336,7 @@ Docker and Docker Compose (simplest setup)
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
-cd zapier
+cd Webhook-Driven-Task-Processing-Pipeline
 
 # 2. Start all services
 docker compose up -d
@@ -331,15 +353,15 @@ docker compose exec app npm run seed
 
 ### Environment Configuration
 
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `DB_URL` | PostgreSQL connection string | `postgres://user:pass@localhost:5432/zapier` |
-| `JWT_SECRET` | Secret for signing access tokens (64+ chars) | Random base64 string |
-| `WEBHOOK_KEY` | Default HMAC key for signature verification | Random 32+ char string |
-| `RABBITMQ_HOSTNAME` | Message broker host | `localhost` |
-| `RABBITMQ_PORT` | Message broker port | `5672` |
-| `RABBITMQ_USERNAME` | Message broker user | `guest` |
-| `RABBITMQ_PASSWORD` | Message broker password | `guest` |
+| Variable            | Purpose                                      | Example                                      |
+| ------------------- | -------------------------------------------- | -------------------------------------------- |
+| `DB_URL`            | PostgreSQL connection string                 | `postgres://user:pass@localhost:5432/zapier` |
+| `JWT_SECRET`        | Secret for signing access tokens (64+ chars) | Random base64 string                         |
+| `WEBHOOK_KEY`       | Default HMAC key for signature verification  | Random 32+ char string                       |
+| `RABBITMQ_HOSTNAME` | Message broker host                          | `localhost`                                  |
+| `RABBITMQ_PORT`     | Message broker port                          | `5672`                                       |
+| `RABBITMQ_USERNAME` | Message broker user                          | `guest`                                      |
+| `RABBITMQ_PASSWORD` | Message broker password                      | `guest`                                      |
 
 ---
 
@@ -356,6 +378,7 @@ docker compose exec app npm run seed
 Authenticate and receive a token pair.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com",
@@ -364,6 +387,7 @@ Authenticate and receive a token pair.
 ```
 
 **Response (200):**
+
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIs...",
@@ -376,6 +400,7 @@ Authenticate and receive a token pair.
 Exchange a refresh token for a new token pair.
 
 **Request:**
+
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIs...",
@@ -384,6 +409,7 @@ Exchange a refresh token for a new token pair.
 ```
 
 **Response (200):**
+
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIs...",
@@ -402,6 +428,7 @@ All pipeline endpoints require `Authorization: Bearer <accessToken>` header.
 List all pipelines for the authenticated user.
 
 **Response (200):**
+
 ```json
 [
   {
@@ -419,9 +446,7 @@ List all pipelines for the authenticated user.
         "name": null
       }
     ],
-    "subscribers": [
-      { "id": "uuid", "url": "https://example.com/webhook" }
-    ],
+    "subscribers": [{ "id": "uuid", "url": "https://example.com/webhook" }],
     "createdAt": "2024-01-01T00:00:00.000Z",
     "updatedAt": "2024-01-01T00:00:00.000Z"
   }
@@ -433,6 +458,7 @@ List all pipelines for the authenticated user.
 Create a new pipeline.
 
 **Request:**
+
 ```json
 {
   "name": "My Pipeline",
@@ -456,6 +482,7 @@ Create a new pipeline.
 ```
 
 **Response (201):**
+
 ```json
 {
   "id": "uuid",
@@ -479,6 +506,7 @@ Get a specific pipeline by ID.
 Update an existing pipeline.
 
 **Request:**
+
 ```json
 {
   "name": "Updated Name",
@@ -500,12 +528,14 @@ Delete a pipeline. Returns `204 No Content`.
 Receive and queue a webhook for processing.
 
 **Headers:**
-| Header | Required | Description |
-|--------|----------|-------------|
-| `X-Idempotency-Key` | No | Prevents duplicate processing |
+
+| Header                | Required    | Description                                         |
+| --------------------- | ----------- | --------------------------------------------------- |
+| `X-Idempotency-Key`   | No          | Prevents duplicate processing                       |
 | `X-Webhook-Signature` | Conditional | Required if pipeline has `webhookSecret` configured |
 
 **Request:**
+
 ```json
 {
   "event": "user.created",
@@ -517,6 +547,7 @@ Receive and queue a webhook for processing.
 ```
 
 **Response (202):**
+
 ```json
 {
   "id": "job-uuid",
@@ -526,6 +557,7 @@ Receive and queue a webhook for processing.
 ```
 
 **Duplicate Response (200):**
+
 ```json
 {
   "id": "existing-job-uuid",
@@ -545,14 +577,16 @@ All job endpoints require `Authorization: Bearer <accessToken>` header.
 List jobs with filtering and pagination.
 
 **Query Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `pipelineId` | string | Filter by pipeline |
-| `status` | string | Filter by status |
-| `page` | number | Page number (default: 1) |
-| `pageSize` | number | Items per page (default: 20, max: 100) |
+
+| Parameter    | Type   | Description                            |
+| ------------ | ------ | -------------------------------------- |
+| `pipelineId` | string | Filter by pipeline                     |
+| `status`     | string | Filter by status                       |
+| `page`       | number | Page number (default: 1)               |
+| `pageSize`   | number | Items per page (default: 20, max: 100) |
 
 **Response (200):**
+
 ```json
 {
   "items": [
@@ -577,6 +611,7 @@ List jobs with filtering and pagination.
 Get job details with delivery summary.
 
 **Response (200):**
+
 ```json
 {
   "id": "uuid",
@@ -606,6 +641,7 @@ Get job details with delivery summary.
 Get full delivery attempt history for a job.
 
 **Response (200):**
+
 ```json
 [
   {
@@ -644,6 +680,7 @@ Actions execute in order and transform the payload. Each action receives the out
 Ensures the payload meets structural requirements.
 
 **Configuration:**
+
 ```json
 {
   "requiredFields": ["field1", "field2"],
@@ -656,6 +693,7 @@ Ensures the payload meets structural requirements.
 Normalizes and transforms data in the payload.
 
 **Configuration:**
+
 ```json
 {
   "trimStrings": true,
@@ -671,6 +709,7 @@ Normalizes and transforms data in the payload.
 Adds computed fields to the payload.
 
 **Configuration:**
+
 ```json
 {
   "addTimestamp": true,
@@ -686,25 +725,27 @@ Adds computed fields to the payload.
 
 ### Automatic Recovery Scenarios
 
-| Scenario | How It's Handled |
-|----------|------------------|
-| **API crashes after DB write** | Outbox message remains, processor picks it up on restart |
-| **Worker crashes mid-processing** | Recovery processor detects stuck jobs, re-queues them |
-| **RabbitMQ unavailable** | Outbox messages queue in database, published when broker recovers |
-| **Subscriber returns 5xx** | Retried 3 times with exponential backoff |
-| **Duplicate webhook received** | Detected via `X-Idempotency-Key`, existing job returned |
+| Scenario                          | How It's Handled                                                  |
+| --------------------------------- | ----------------------------------------------------------------- |
+| **API crashes after DB write**    | Outbox message remains, processor picks it up on restart          |
+| **Worker crashes mid-processing** | Recovery processor detects stuck jobs, re-queues them             |
+| **RabbitMQ unavailable**          | Outbox messages queue in database, published when broker recovers |
+| **Subscriber returns 5xx**        | Retried 3 times with exponential backoff                          |
+| **Duplicate webhook received**    | Detected via `X-Idempotency-Key`, existing job returned           |
 
 ### Stuck Recovery Processors
 
 The system includes two dedicated recovery processors that detect and recover "stuck" jobs — jobs that got claimed by a worker but never completed (usually due to worker crashes or unexpected shutdowns).
 
 **StuckJobRecoveryProcessor**
+
 - Runs every 30 seconds
 - Finds jobs stuck in `Processing` state for more than 5 minutes
 - Resets them to `Queued` and creates a new outbox event to re-queue them
 - Ensures no job is lost even if a worker crashes mid-processing
 
 **StuckNotificationRecoveryProcessor**
+
 - Runs every 30 seconds
 - Finds jobs stuck in `Dispatching` delivery state for more than 5 minutes
 - Resets them to `Pending` and creates a new outbox event to retry delivery
@@ -714,12 +755,12 @@ Both processors use the transactional outbox pattern to guarantee that recovered
 
 ### Rate Limiting Tiers
 
-| Tier | Limit | Scope | Purpose |
-|------|-------|-------|---------|
-| Global | 100 req/min | Per IP | DDoS protection |
-| Auth | 10 req/min | Per IP | Brute-force prevention |
-| Webhooks | 30 req/min | Per pipeline | Ingestion throttling |
-| API | 60 req/min | Per user | Fair usage |
+| Tier     | Limit       | Scope        | Purpose                |
+| -------- | ----------- | ------------ | ---------------------- |
+| Global   | 100 req/min | Per IP       | DDoS protection        |
+| Auth     | 10 req/min  | Per IP       | Brute-force prevention |
+| Webhooks | 30 req/min  | Per pipeline | Ingestion throttling   |
+| API      | 60 req/min  | Per user     | Fair usage             |
 
 ### Delivery Guarantees
 
@@ -745,14 +786,14 @@ Both processors use the transactional outbox pattern to guarantee that recovered
 
 Available at `http://localhost:9464/metrics`
 
-| Metric | Type | Description |
-|--------|------|-------------|
-| `webhooks_received_total` | Counter | Total webhooks received |
-| `jobs_processed_total` | Counter | Jobs processed by status |
-| `job_processing_duration_ms` | Histogram | Processing time |
-| `notifications_dispatched_total` | Counter | Delivery attempts by status |
-| `stuck_jobs_recovered_total` | Counter | Jobs recovered by recovery processor |
-| `stuck_notifications_recovered_total` | Counter | Notifications recovered by recovery processor |
+| Metric                                | Type      | Description                                   |
+| ------------------------------------- | --------- | --------------------------------------------- |
+| `webhooks_received_total`             | Counter   | Total webhooks received                       |
+| `jobs_processed_total`                | Counter   | Jobs processed by status                      |
+| `job_processing_duration_ms`          | Histogram | Processing time                               |
+| `notifications_dispatched_total`      | Counter   | Delivery attempts by status                   |
+| `stuck_jobs_recovered_total`          | Counter   | Jobs recovered by recovery processor          |
+| `stuck_notifications_recovered_total` | Counter   | Notifications recovered by recovery processor |
 
 ### Logging
 
@@ -768,20 +809,20 @@ The project uses GitHub Actions for continuous integration and deployment.
 
 Runs on every push to `main`/`develop` and on pull requests to `main`.
 
-| Step | Description |
-|------|-------------|
-| **Type Check** | Validates TypeScript types |
-| **Lint** | Runs ESLint for code quality |
-| **Test** | Runs the test suite with PostgreSQL and RabbitMQ services |
-| **Build** | Compiles TypeScript to JavaScript |
+| Step           | Description                                               |
+| -------------- | --------------------------------------------------------- |
+| **Type Check** | Validates TypeScript types                                |
+| **Lint**       | Runs ESLint for code quality                              |
+| **Test**       | Runs the test suite with PostgreSQL and RabbitMQ services |
+| **Build**      | Compiles TypeScript to JavaScript                         |
 
 ### CD Pipeline
 
 Runs automatically after a successful CI pipeline on `main`.
 
-| Step | Description |
-|------|-------------|
-| **Build Image** | Builds the Docker image |
+| Step                 | Description                                            |
+| -------------------- | ------------------------------------------------------ |
+| **Build Image**      | Builds the Docker image                                |
 | **Push to Registry** | Pushes to Docker Hub with `latest` and commit SHA tags |
 
 ---
@@ -824,43 +865,42 @@ src/
 └── abstractions/           # Interfaces
 ```
 
-
 ## Requirements Fulfilled
 
 ### Core Requirements
 
-| Requirement | Status | Implementation |
-|-------------|--------|----------------|
-| **CRUD API for managing pipelines** | ✅ | Full REST API at `/api/pipelines` — create, read, update, delete |
-| **Webhook ingestion with job queue** | ✅ | Webhooks received at `/api/webhooks/:sourceId`, queued via RabbitMQ |
-| **Worker for background processing** | ✅ | `RabbitMqJobConsumer` processes jobs, `RabbitMqNotificationConsumer` handles delivery |
-| **3+ processing action types** | ✅ | **Validate** (structure), **Transform** (normalize), **Enrich** (compute fields) |
-| **Subscriber delivery with retry logic** | ✅ | Exponential backoff (2s, 4s, 8s), 3 attempts per subscriber |
-| **API for job status & history** | ✅ | `GET /api/jobs`, `GET /api/jobs/:id`, `GET /api/jobs/:id/deliveries` |
-| **Docker Compose setup** | ✅ | `docker compose up` runs API, PostgreSQL, and RabbitMQ with healthchecks |
-| **GitHub Actions CI/CD** | ✅ | CI: type-check, lint, test, build. CD: Docker image push to registry |
-| **Documentation (README)** | ✅ | Setup, usage, API reference, architecture, and design decisions |
+| Requirement                              | Status | Implementation                                                                        |
+| ---------------------------------------- | ------ | ------------------------------------------------------------------------------------- |
+| **CRUD API for managing pipelines**      | ✅     | Full REST API at `/api/pipelines` — create, read, update, delete                      |
+| **Webhook ingestion with job queue**     | ✅     | Webhooks received at `/api/webhooks/:sourceId`, queued via RabbitMQ                   |
+| **Worker for background processing**     | ✅     | `RabbitMqJobConsumer` processes jobs, `RabbitMqNotificationConsumer` handles delivery |
+| **3+ processing action types**           | ✅     | **Validate** (structure), **Transform** (normalize), **Enrich** (compute fields)      |
+| **Subscriber delivery with retry logic** | ✅     | Exponential backoff (2s, 4s, 8s), 3 attempts per subscriber                           |
+| **API for job status & history**         | ✅     | `GET /api/jobs`, `GET /api/jobs/:id`, `GET /api/jobs/:id/deliveries`                  |
+| **Docker Compose setup**                 | ✅     | `docker compose up` runs API, PostgreSQL, and RabbitMQ with healthchecks              |
+| **GitHub Actions CI/CD**                 | ✅     | CI: type-check, lint, test, build. CD: Docker image push to registry                  |
+| **Documentation (README)**               | ✅     | Setup, usage, API reference, architecture, and design decisions                       |
 
 ### Evaluation Criteria Coverage
 
-| Area | What Was Delivered |
-|------|-------------------|
-| **Architecture** | Three-layer separation (API → Queue → Workers), transactional outbox pattern, clean schema with documented ER diagram |
-| **Reliability** | Retry logic with backoff, stuck job recovery processors, idempotency keys, graceful shutdown handling |
-| **Code Quality** | TypeScript throughout, interface-based abstractions, dependency injection, consistent error handling |
-| **Infrastructure** | Single `docker compose up` works immediately, CI runs tests with real PostgreSQL/RabbitMQ services |
-| **Documentation** | Comprehensive README with architecture diagrams, API reference, design decisions with tradeoff analysis |
-| **Creativity & Polish** | Transactional outbox, multi-tier rate limiting, Prometheus metrics, HMAC signature verification, recovery processors |
+| Area                    | What Was Delivered                                                                                                    |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Architecture**        | Three-layer separation (API → Queue → Workers), transactional outbox pattern, clean schema with documented ER diagram |
+| **Reliability**         | Retry logic with backoff, stuck job recovery processors, idempotency keys, graceful shutdown handling                 |
+| **Code Quality**        | TypeScript throughout, interface-based abstractions, dependency injection, consistent error handling                  |
+| **Infrastructure**      | Single `docker compose up` works immediately, CI runs tests with real PostgreSQL/RabbitMQ services                    |
+| **Documentation**       | Comprehensive README with architecture diagrams, API reference, design decisions with tradeoff analysis               |
+| **Creativity & Polish** | Transactional outbox, multi-tier rate limiting, Prometheus metrics, HMAC signature verification, recovery processors  |
 
 ### Stretch Goals Implemented
 
-| Feature | Description |
-|---------|-------------|
-| ✅ **Authentication** | JWT access tokens + refresh token rotation with Argon2id password hashing |
-| ✅ **Webhook Signature Verification** | HMAC-SHA256 with timing-safe comparison |
-| ✅ **Rate Limiting** | Multi-tier: global (100/min), auth (10/min), webhooks (30/min), API (60/min) |
-| ✅ **Metrics** | Prometheus endpoint with counters/histograms for all operations |
-| ✅ **Concurrency Control** | Database-level job claiming prevents duplicate processing |
+| Feature                               | Description                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------- |
+| ✅ **Authentication**                 | JWT access tokens + refresh token rotation with Argon2id password hashing    |
+| ✅ **Webhook Signature Verification** | HMAC-SHA256 with timing-safe comparison                                      |
+| ✅ **Rate Limiting**                  | Multi-tier: global (100/min), auth (10/min), webhooks (30/min), API (60/min) |
+| ✅ **Metrics**                        | Prometheus endpoint with counters/histograms for all operations              |
+| ✅ **Concurrency Control**            | Database-level job claiming prevents duplicate processing                    |
 
 ### Future Enhancements
 
